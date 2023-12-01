@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ item.name }}</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        var csrfToken = '{{ csrf_token }}';
+    </script>
+</head>
+<body>
+    <h1>{{ item.name }}</h1>
+    <p>{{ item.description }}</p>
+    <p>Цена: ${{ item.price }}</p>
+
+    <button id="buyButton">Купить</button>
+
+    <script>
+        var stripe = Stripe('{{ public_key }}');
+        var buyButton = document.getElementById('buyButton');
+
+        buyButton.addEventListener('click', function() {
+            // Запрос на /buy/{id} с передачей CSRF-токена
+            fetch('/buy/{{ item.id }}', {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                }
+            })
+                .then(response => response.json())
+                .then(session => {
+                    // Редирект на Checkout форму
+                    return stripe.redirectToCheckout({ sessionId: session.session_id });
+                })
+                .then(result => {
+                    if (result.error) {
+                        alert(result.error.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        });
+    </script>
+</body>
+</html>
